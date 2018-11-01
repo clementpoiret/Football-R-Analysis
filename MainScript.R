@@ -20,6 +20,8 @@ rm(list=ls())
 library(tidyverse)
 library(fmsb)
 library(matrixStats)
+#devtools::install_github("FCrSTATS/SBpitch")
+library(SBpitch)
 
 setwd("~/Documents/Data/Université/Football-R-Analysis")
 
@@ -179,7 +181,8 @@ write.csv(postData, file = "fiche_par_poste.csv")
 
 # CHARTING ----
 
-#add 2 lines to the dataframe: the max and min of each topic to show on the plot!
+# RADARCHART
+## add 2 lines to the dataframe: the max and min
 data <- as.matrix(t(postData[-nrow(postData),] ))
 colnames(data) <- as.character(unlist(data[1,]))
 data <- data[-1,]
@@ -190,43 +193,11 @@ max <- colMaxs(data)
 min <- colMins(data)
 data <- as.data.frame(rbind(max, min, data))
 
-
-
-#==================
-# Plot 1: Default radar chart proposed by the library:
 radarchart(data)
 
 
-#==================
-# Plot 2: Same plot with custom features
-colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
-colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
-radarchart( data, axistype=1, 
-            #custom polygon
-            pcol=colors_border, pfcol=colors_in, plwd=4, plty=1,
-            #custom the grid
-            cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
-            #custom labels
-            vlcex=0.8 
-)
-legend(x=0.7, y=1, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
 
-
-
-#=================
-# Plot3: If you remove the 2 first lines, the function compute the max and min of each variable with the available data:
-colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
-colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
-radarchart( data[-c(1,2),], axistype=0 , maxmin=F,
-            #custom polygon
-            pcol=colors_border , pfcol=colors_in , plwd=4 , plty=1,
-            #custom the grid
-            cglcol="grey", cglty=1, axislabcol="black", cglwd=0.8, 
-            #custom labels
-            vlcex=0.8 
-)
-legend(x=0.7, y=1, legend = rownames(data[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "grey", cex=1.2, pt.cex=3)
-
+# RADARCHART2
 colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
 colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
 data.two <- rbind(data[c(1,2,6,9,11), -c(1:6)], colMeans2(as.matrix(data[-c(1:6)])))
@@ -241,10 +212,14 @@ radarchart( data.two, axistype=1,
 )
 legend(x=1, y=1, legend = rownames(data.two[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
 
+## Cleanup after charting
+dat <- c("infos", 
+         "playerDataList",
+         "postData")
+rm(list=setdiff(ls(), dat))
 
 
-rm(infos, playerDataList)
-
+# CIRCULAR HISTOGRAM
 # Create dataset
 data.two <- rbind(postData[1,], postData[2,], postData[3,], postData[4,])
 
@@ -329,3 +304,14 @@ p = ggplot(data.two, aes(x=as.factor(id), y=Value, fill=Pos)) +       # Note tha
   geom_text(data=base_data, aes(x = title, y = -18, label=c('A', 'B', 'C', 'D')), hjust=c(1,1,0,0), colour = "black", alpha=0.8, size=4, fontface="bold", inherit.aes = FALSE)
 
 p
+
+# CLEANUP
+dat <- c("infos", 
+         "playerDataList",
+         "postData")
+rm(list=setdiff(ls(), dat))
+
+# FOOTBALL PLOTS
+## Todo
+create_Pitch(goaltype = "barcanumbers")
+
