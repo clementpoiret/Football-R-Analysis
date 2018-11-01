@@ -1,34 +1,29 @@
-# 
-#              ,----------------,              ,---------,
-#         ,-----------------------,          ,"        ,"|
-#       ,"                      ,"|        ,"        ,"  |
-#      +-----------------------+  |      ,"        ,"    |
-#      |  .-----------------.  |  |     +---------+      |
-#      |  |                 |  |  |     | -==----'|      |
-#      |  |  Made w/ love,  |  |  |     |         |      |
-#      |  |  By             |  |  |/----|`---=    |      |
-#      |  |  Clement POIRET |  |  |   ,/|==== ooo |      ;
-#      |  |  <3             |  |  |  // |(((( [33]|    ,"
-#      |  `-----------------'  |," .;'| |((((     |  ,"
-#      +-----------------------+  ;;  | |         |,"
-#         /_)______________(_/  //'   | +---------+
-#    ___________________________/___  `,
-#   /  oooooooooooooooo  .o.  oooo /,   \,"-----------
-#  / ==ooooooooooooooo==.o.  ooo= //   ,`\--{)B     ,"
-# /_==__==========__==_ooo__ooo=_/'   /___________,"
-# `-----------------------------'
+# LICENSE ----
 #
-
-# INITIAL SETUP
+# Copyright 2018 Clement POIRET.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+# http://www.apache.org/licenses/LICENSE-2.0
+# 
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# INITIAL SETUP ----
 rm(list=ls())
 
 library(tidyverse)
 library(fmsb)
 library(matrixStats)
 
-setwd("~/Documents/Data/Université/M1_Prog")
+setwd("~/Documents/Data/Université/Football-R-Analysis")
 
-# SETTING VAR
+# VARIABLES ----
 path <- "./Data/matchs/"
 infos <- as.data.frame(read_csv("Data/2014-2015_20150526_Premier League_Player_Statistics.csv"))
 dirList <- list.dirs(path = path, full.names = TRUE, recursive = TRUE)
@@ -37,6 +32,7 @@ csvList <- NULL
 tmpMat <- NULL
 tmpLength <- NULL
 
+# FUNCTIONS ----
 convertToKmh <- function(speedInMs){
   return(speedInMs*3.6)
 }
@@ -112,6 +108,7 @@ loadData <- function(mList, mMatch) {
   return(playerDataList)
 }
 
+# MAIN SCRIPT ----
 for (i in 1:length(dirList)) {
   # GETTING ALL CSVs, ENDING BY '*Trajectory.csv'
   tmpLength <- length(csvList)
@@ -154,6 +151,7 @@ playerDataList$Dpzv5Norm <- playerDataList$Dpzv5 *
   90 / 
   playerDataList$TimePlayed
 
+# SUMMARISE W/ DPLYR
 postData <- playerDataList %>%
   group_by(Pos) %>%
   summarise(Dpzv1.Mean = mean(Dpzv1),
@@ -169,37 +167,17 @@ postData <- playerDataList %>%
             TimePlayed.Mean = mean(TimePlayed),
             TotalDistance.Mean = mean(Total))
 
-write.csv(playerDataList, file = "fiche_par_joueur.csv")
-write.csv(postData, file = "fiche_par_poste.csv")
-
 # LITTLE BIT OF CLEANING
 dat <- c("infos", 
          "playerDataList",
          "postData")
 rm(list=setdiff(ls(), dat))
 
+# SAVE DATA TO CSV ----
+write.csv(playerDataList, file = "fiche_par_joueur.csv")
+write.csv(postData, file = "fiche_par_poste.csv")
 
-
-
-
-##### CHARTING BBAY!
-library(GGally)
-ggpairs(postData)
-ggcorr(postData, method = c("everything", "pearson")) 
-
-
-moxbuller = function(n) {   
-  u = runif(n)   
-  v = runif(n)   
-  x = cos(2*pi*u)*sqrt(-2*log(v))  
-  y = sin(2*pi*v)*sqrt(-2*log(u))
-  r = list(x=x, y=y)
-  return(r) 
-}
-r = moxbuller(50000) 
-par(bg="black") 
-par(mar=c(0,0,0,0)) 
-plot(r$x,r$y, pch=".", col="blue", cex=1.2)
+# CHARTING ----
 
 #add 2 lines to the dataframe: the max and min of each topic to show on the plot!
 data <- as.matrix(t(postData[-nrow(postData),] ))
