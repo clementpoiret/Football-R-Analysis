@@ -172,8 +172,15 @@ postData <- playerDataList %>%
             Dpzv3Norm.Mean = mean(Dpzv3Norm),
             Dpzv4Norm.Mean = mean(Dpzv4Norm),
             Dpzv5Norm.Mean = mean(Dpzv5Norm),
+            D1N.SD = sd(Dpzv1Norm),
+            D2N.SD = sd(Dpzv2Norm),
+            D3N.SD = sd(Dpzv3Norm),
+            D4N.SD = sd(Dpzv4Norm),
+            D5N.SD = sd(Dpzv5Norm),
             TimePlayed.Mean = mean(TimePlayed),
-            TotalDistance.Mean = mean(Total))
+            Time.SD = sd(TimePlayed),
+            TotalDistance.Mean = mean(Total),
+            TotalDistance.SD = sd(Total))
 
 postDataExtended <- playerDataList %>%
   group_by(.dots=c('Pos','MatchPlayed', 'Team')) %>%
