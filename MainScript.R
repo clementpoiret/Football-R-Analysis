@@ -31,7 +31,6 @@ dirList <- list.dirs(path = path, full.names = TRUE, recursive = TRUE)
 dirList <- dirList[dirList != path]
 csvList <- NULL
 tmpMat <- NULL
-tmpLength <- NULL
 
 # FUNCTIONS ----
 convertToKmh <- function(speedInMs){
@@ -46,7 +45,6 @@ loadData <- function(mList, mMatch, wrong_names) {
     # READING EACH CSV IN THE LIST
     df <- read_csv(mList[i])
     MatchPlayed <- mList[i]
-    #MatchPlayed <- './Data/matchs//Arsenal v Manchester City-20140913/20140913-Arsenal v Manchester City-Aaron RAMSEY-Trajectory.csv'
     MatchPlayed <- gsub('./Data/matchs//', '', MatchPlayed)
     MatchPlayed <- strsplit(MatchPlayed, "[/]")[[1]][1]
     MatchPlayed <- substr(MatchPlayed,1,nchar(MatchPlayed)-9)
@@ -92,6 +90,7 @@ loadData <- function(mList, mMatch, wrong_names) {
         # END OF LOOP, MERGING MATCH POSITION AND PLAYER DATA
         mDpzv <- as.data.frame(mDpzv)
         
+        # CHECK IF NAME IS IN LIST, IF YES: USE FIXED NAME
         nameToSearch <- ''
         
         if (gsub('.*\\ ', '', df$Player1Name[1]) %in% names(wrong_names)) {
@@ -120,6 +119,7 @@ loadData <- function(mList, mMatch, wrong_names) {
 }
 
 # MAIN SCRIPT ----
+# CREATE LIST WITH ERRORS AND FIXES
 wrong_names <- vector(mode='list', length=3)
 names(wrong_names) <- c('SANCHEZ', 'OEZIL', 'AGUERO')
 wrong_names[[1]] <- 'ALEXIS'
@@ -128,12 +128,10 @@ wrong_names[[3]] <- toupper('Agüero')
 
 for (i in 1:length(dirList)) {
   # GETTING ALL CSVs, ENDING BY '*Trajectory.csv'
-  tmpLength <- length(csvList)
   csvList <- c(csvList, list.files(dirList[i], 
                                    pattern="*Trajectory.csv",
                                    full.names=TRUE))
-  tmpMat <- rbind(tmpMat, cbind(length(csvList)-tmpLength,
-                                gsub(path,'', dirList[i])))
+  tmpMat <- rbind(tmpMat, gsub(path,'', dirList[i]))
   
   if (i == length(dirList)) {
     # LOADING DATA
@@ -141,32 +139,16 @@ for (i in 1:length(dirList)) {
   }
 }
 
-# CONVERTING BAD TYPES
-playerDataList <- as.data.frame(playerDataList)
-playerDataList$TimePlayed <- as.numeric(as.character(playerDataList$TimePlayed))
-playerDataList[, 4] <- as.numeric(as.character(playerDataList[, 4]))
-playerDataList[, 5] <- as.numeric(as.character(playerDataList[, 5]))
-playerDataList[, 6] <- as.numeric(as.character(playerDataList[, 6]))
-playerDataList[, 7] <- as.numeric(as.character(playerDataList[, 7]))
-playerDataList[, 8] <- as.numeric(as.character(playerDataList[, 8]))
-playerDataList[, 9] <- as.numeric(as.character(playerDataList[, 9]))
-
 # TIME PLAYED NORMALIZATION y = x * 90 / z
-playerDataList$Dpzv1Norm <- playerDataList$Dpzv1 * 
-  90 / 
-  playerDataList$TimePlayed
-playerDataList$Dpzv2Norm <- playerDataList$Dpzv2 * 
-  90 / 
-  playerDataList$TimePlayed
-playerDataList$Dpzv3Norm <- playerDataList$Dpzv3 * 
-  90 / 
-  playerDataList$TimePlayed
-playerDataList$Dpzv4Norm <- playerDataList$Dpzv4 * 
-  90 / 
-  playerDataList$TimePlayed
-playerDataList$Dpzv5Norm <- playerDataList$Dpzv5 * 
-  90 / 
-  playerDataList$TimePlayed
+i <- 4
+while (i <= 8) {
+  col_playerDataList <- ncol(playerDataList)
+  playerDataList[, col_playerDataList+1] <- playerDataList[,i] *
+    90 / playerDataList$TimePlayed
+  colnames(playerDataList)[col_playerDataList+1] <- paste(colnames(playerDataList)[i], 
+                                                          'Norm', sep='')
+  i = i + 1
+}
 
 # SUMMARISE W/ DPLYR
 postData <- playerDataList %>%
