@@ -106,7 +106,16 @@ loadData <- function(mList, mMatch, wrong_names) {
           # SETTING NA IF POS==NULL
           Pos <- 'NA'
         }
-        mDpzv <- cbind(MatchPlayed, Pos, mDpzv)
+        
+        Team <- infos[grepl(nameToSearch, toupper(infos$Player)) & 
+                       grepl(MatchPlayed, infos$Match),]$Team[1]
+        
+        if (is.null(Team)) {
+          # SETTING NA IF POS==NULL
+          Team <- 'NA'
+        }
+        
+        mDpzv <- cbind(MatchPlayed, Pos, Team, mDpzv)
       }
     }
     
@@ -140,8 +149,8 @@ for (i in 1:length(dirList)) {
 }
 
 # TIME PLAYED NORMALIZATION y = x * 90 / z
-i <- 4
-while (i <= 8) {
+i <- 5
+while (i <= 9) {
   col_playerDataList <- ncol(playerDataList)
   playerDataList[, col_playerDataList+1] <- playerDataList[,i] *
     90 / playerDataList$TimePlayed
@@ -166,8 +175,8 @@ postData <- playerDataList %>%
             TimePlayed.Mean = mean(TimePlayed),
             TotalDistance.Mean = mean(Total))
 
-postDataPerMatch <- playerDataList %>%
-  group_by(.dots=c('Pos','MatchPlayed')) %>%
+postDataExtended <- playerDataList %>%
+  group_by(.dots=c('Pos','MatchPlayed', 'Team')) %>%
   summarise(Dpzv1.Mean = mean(Dpzv1),
             Dpzv2.Mean = mean(Dpzv2),
             Dpzv3.Mean = mean(Dpzv3),
@@ -182,15 +191,16 @@ postDataPerMatch <- playerDataList %>%
             TotalDistance.Mean = mean(Total))
 
 # LITTLE BIT OF CLEANING
-dat <- c("infos", 
-         "playerDataList",
-         "postData")
+dat <- c('infos', 
+         'playerDataList',
+         'postDataExtended',
+         'postData')
 rm(list=setdiff(ls(), dat))
 
 # SAVE DATA TO CSV ----
 write.csv(playerDataList, file = "fiche_par_joueur.csv")
 write.csv(postData, file = "fiche_par_poste.csv")
-write.csv(postDataPerMatch, file = "fiche_par_poste_match.csv")
+write.csv(postDataExtended, file = "fiche_par_poste_etendue.csv")
 
 # CHARTING ----
 
@@ -226,9 +236,10 @@ radarchart( data.two, axistype=1,
 legend(x=1, y=1, legend = rownames(data.two[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
 
 ## Cleanup after charting
-dat <- c("infos", 
-         "playerDataList",
-         "postData")
+dat <- c('infos', 
+         'playerDataList',
+         'postDataExtended',
+         'postData')
 rm(list=setdiff(ls(), dat))
 
 
@@ -319,9 +330,10 @@ p = ggplot(data.two, aes(x=as.factor(id), y=Value, fill=Pos)) +       # Note tha
 p
 
 # CLEANUP
-dat <- c("infos", 
-         "playerDataList",
-         "postData")
+dat <- c('infos', 
+         'playerDataList',
+         'postDataExtended',
+         'postData')
 rm(list=setdiff(ls(), dat))
 
 # TODO
