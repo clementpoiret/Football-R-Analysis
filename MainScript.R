@@ -20,6 +20,7 @@ rm(list=ls())
 library(tidyverse)
 library(fmsb)
 library(matrixStats)
+library(reshape2)
 library(plotly)
 
 setwd("~/Documents/Data/Université/Football-R-Analysis")
@@ -148,9 +149,9 @@ for (i in 1:length(dirList)) {
   }
 }
 
-# TIME PLAYED NORMALIZATION y = x * 90 / z
+# NORMALIZATION y = x * 90 / z
 i <- 5
-while (i <= 9) {
+while (i <= 10) {
   col_playerDataList <- ncol(playerDataList)
   playerDataList[, col_playerDataList+1] <- playerDataList[,i] *
     90 / playerDataList$TimePlayed
@@ -179,6 +180,8 @@ postData <- playerDataList %>%
             D5N.SD = sd(Dpzv5Norm),
             TimePlayed.Mean = mean(TimePlayed),
             Time.SD = sd(TimePlayed),
+            TotalDistanceNorm.Mean = mean(TotalNorm),
+            TotalDistanceNorm.SD = sd(TotalNorm),
             TotalDistance.Mean = mean(Total),
             TotalDistance.SD = sd(Total))
 
@@ -195,13 +198,31 @@ postDataExtended <- playerDataList %>%
             Dpzv4Norm.Mean = mean(Dpzv4Norm),
             Dpzv5Norm.Mean = mean(Dpzv5Norm),
             TimePlayed.Mean = mean(TimePlayed),
+            TotalDistanceNorm.Mean = mean(TotalNorm),
+            TotalDistance.Mean = mean(Total))
+
+postDataTeam <- playerDataList %>%
+  group_by(.dots=c('Pos', 'Team')) %>%
+  summarise(Dpzv1.Mean = mean(Dpzv1),
+            Dpzv2.Mean = mean(Dpzv2),
+            Dpzv3.Mean = mean(Dpzv3),
+            Dpzv4.Mean = mean(Dpzv4),
+            Dpzv5.Mean = mean(Dpzv5),
+            Dpzv1Norm.Mean = mean(Dpzv1Norm),
+            Dpzv2Norm.Mean = mean(Dpzv2Norm),
+            Dpzv3Norm.Mean = mean(Dpzv3Norm),
+            Dpzv4Norm.Mean = mean(Dpzv4Norm),
+            Dpzv5Norm.Mean = mean(Dpzv5Norm),
+            TimePlayed.Mean = mean(TimePlayed),
+            TotalDistanceNorm.Mean = mean(TotalNorm),
             TotalDistance.Mean = mean(Total))
 
 # LITTLE BIT OF CLEANING
 dat <- c('infos', 
          'playerDataList',
          'postDataExtended',
-         'postData')
+         'postData',
+         'postDataTeam')
 rm(list=setdiff(ls(), dat))
 
 # SAVE DATA TO CSV ----
@@ -212,159 +233,115 @@ write.csv(postDataExtended, file = "fiche_par_poste_etendue.csv")
 # CHARTING ----
 
 # RADARCHART
-## add 2 lines to the dataframe: the max and min
-data <- as.matrix(t(postData[-nrow(postData),] ))
-colnames(data) <- as.character(unlist(data[1,]))
-data <- data[-1,]
-class(data) <- "numeric" 
-data <- t(data)
+# DEF
+data <- t(postDataTeam[grepl('defender', postDataTeam$Pos),][,-1] %>%
+            group_by(Team) %>%
+            summarise(Dpzv1 = mean(Dpzv1Norm.Mean),
+                      Dpzv2 = mean(Dpzv2Norm.Mean),
+                      Dpzv3 = mean(Dpzv3Norm.Mean),
+                      Dpzv4 = mean(Dpzv4Norm.Mean),
+                      Dpzv5 = mean(Dpzv5Norm.Mean)) %>%
+            arrange(Team))
+colnames(data) <- data[1,]
+data <- t(data[-1,])
+class(data) <- 'numeric'
 
 max <- colMaxs(data)
 min <- colMins(data)
 data <- as.data.frame(rbind(max, min, data))
 
-radarchart(data)
-
-
-
-# RADARCHART2
-colors_border=c( rgb(0.2,0.5,0.5,0.9), rgb(0.8,0.2,0.5,0.9) , rgb(0.7,0.5,0.1,0.9) )
-colors_in=c( rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4) , rgb(0.7,0.5,0.1,0.4) )
-data.two <- rbind(data[c(1,2,6,9,11), -c(1:6)], colMeans2(as.matrix(data[-c(1:6)])))
-radarchart( data.two, axistype=1, 
-            #custom polygon
-            pcol=colors_border, pfcol=colors_in, plwd=4, plty=1,
-            #custom the grid
-            cglcol="grey", cglty=1, axislabcol="grey", caxislabels=seq(0,20,5), cglwd=0.8,
-            #custom labels
-            vlcex=0.8 ,
-            title = "Comparaison des postes par diagramme de Kiviat"
+colors = c(rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4), rgb(0.7,0.5,0.1,0.4))
+radarchart(data, axistype=1, 
+           pcol=colors, pfcol=colors, plwd=0.5, plty=1,
+           cglcol="grey", cglty=1, axislabcol="grey", cglwd=0.4,
+           title = "Défenseurs"
 )
-legend(x=1, y=1, legend = rownames(data.two[-c(1,2),]), bty = "n", pch=20 , col=colors_in , text.col = "black", cex=1.2, pt.cex=3)
+
+# MIDFIELD
+data <- t(postDataTeam[grepl('midfielder', postDataTeam$Pos),][,-1] %>%
+            group_by(Team) %>%
+            summarise(Dpzv1 = mean(Dpzv1Norm.Mean),
+                      Dpzv2 = mean(Dpzv2Norm.Mean),
+                      Dpzv3 = mean(Dpzv3Norm.Mean),
+                      Dpzv4 = mean(Dpzv4Norm.Mean),
+                      Dpzv5 = mean(Dpzv5Norm.Mean)) %>%
+            arrange(Team))
+colnames(data) <- data[1,]
+data <- t(data[-1,])
+class(data) <- 'numeric'
+
+max <- colMaxs(data)
+min <- colMins(data)
+data <- as.data.frame(rbind(max, min, data))
+
+colors = c(rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4), rgb(0.7,0.5,0.1,0.4))
+radarchart(data, axistype=1,
+           pcol=colors, pfcol=colors, plwd=0.5, plty=1,
+           cglcol="grey", cglty=1, axislabcol="grey", cglwd=0.4,
+           title = "Milieux"
+)
+
+
+# FORWARD
+data <- t(postDataTeam[grepl('forward', postDataTeam$Pos),][,-1] %>%
+            group_by(Team) %>%
+            summarise(Dpzv1 = mean(Dpzv1Norm.Mean),
+                      Dpzv2 = mean(Dpzv2Norm.Mean),
+                      Dpzv3 = mean(Dpzv3Norm.Mean),
+                      Dpzv4 = mean(Dpzv4Norm.Mean),
+                      Dpzv5 = mean(Dpzv5Norm.Mean)) %>%
+            arrange(Team))
+colnames(data) <- data[1,]
+data <- t(data[-1,])
+class(data) <- 'numeric'
+
+max <- colMaxs(data)
+min <- colMins(data)
+data <- as.data.frame(rbind(max, min, data))
+
+colors = c(rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4), rgb(0.7,0.5,0.1,0.4))
+radarchart(data, axistype=1,
+           pcol=colors, pfcol=colors, plwd=0.5, plty=1,
+           cglcol="grey", cglty=1, axislabcol="grey", cglwd=0.4,
+           title = "Avants"
+)
+
+# GOAL
+data <- t(postDataTeam[grepl('Goal', postDataTeam$Pos),][,-1] %>%
+            group_by(Team) %>%
+            summarise(Dpzv1 = mean(Dpzv1Norm.Mean),
+                      Dpzv2 = mean(Dpzv2Norm.Mean),
+                      Dpzv3 = mean(Dpzv3Norm.Mean),
+                      Dpzv4 = mean(Dpzv4Norm.Mean),
+                      Dpzv5 = mean(Dpzv5Norm.Mean)) %>%
+            arrange(Team))
+colnames(data) <- data[1,]
+data <- t(data[-1,])
+class(data) <- 'numeric'
+
+max <- colMaxs(data)
+min <- colMins(data)
+data <- as.data.frame(rbind(max, min, data))
+
+colors = c(rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4), rgb(0.7,0.5,0.1,0.4))
+radarchart(data, axistype=1, 
+           pcol=colors, pfcol=colors, plwd=0.5, plty=1,
+           cglcol="grey", cglty=1, axislabcol="grey", cglwd=0.4,
+           title = "Goals"
+)
 
 ## Cleanup after charting
 dat <- c('infos', 
          'playerDataList',
          'postDataExtended',
-         'postData')
+         'postData',
+         'postDataTeam')
 rm(list=setdiff(ls(), dat))
 
-
-# CIRCULAR HISTOGRAM
-# Create dataset
-data.two <- rbind(postData[1,], postData[2,], postData[3,], postData[4,])
-
-data.two <- data.two %>%
-  gather(Dpzv, Value, 
-         Dpzv1Norm.Mean:Dpzv5Norm.Mean, 
-         factor_key=TRUE) %>%
-  arrange(Pos)
-data.two <- data.two[c('Dpzv', 'Pos', 'Value')]
-rm(postData)
-write.csv(data.two, file = "fiche.csv")
-data.two <- as.data.frame(read_csv("fiche.csv")[,2:4])
-data.two$Pos <- as.factor(data.two$Pos)
-data.two$Dpzv <- as.factor(data.two$Dpzv)
-data.two$Value <- data.two$Value / 50
-
-
-data=data.frame(
-  individual=paste( "Mister ", seq(1,60), sep=""),
-  group=c( rep('A', 10), rep('B', 30), rep('C', 14), rep('D', 6)) ,
-  value=sample( seq(10,100), 60, replace=T)
-)
-
-# Set a number of 'empty bar' to add at the end of each group
-empty_bar = 3
-to_add = as.data.frame(matrix(NA, empty_bar*nlevels(data.two$Pos), ncol(data.two)) )
-colnames(to_add) = colnames(data.two)
-to_add$Pos=rep(levels(data.two$Pos), each=empty_bar)
-data.two=rbind(data.two, to_add)
-data.two=data.two %>% arrange(Pos)
-data.two$id=seq(1, nrow(data.two))
-
-# Get the name and the y position of each label
-label_data = data.two
-number_of_bar = nrow(label_data)
-angle = 90 - 360 * (label_data$id-0.5) / number_of_bar     # I substract 0.5 because the letter must have the angle of the center of the bars. Not extreme right(1) or extreme left (0)
-label_data$hjust <- ifelse(angle < -90, 1, 0)
-label_data$angle <- ifelse(angle < -90, angle+180, angle)
-
-# prepare a data frame for base lines
-base_data=data.two %>% 
-  group_by(Pos) %>% 
-  summarize(start=min(id), end=max(id) - empty_bar) %>% 
-  rowwise() %>% 
-  mutate(title=mean(c(start, end)))
-
-# prepare a data frame for grid (scales)
-grid_data = base_data
-grid_data$end = grid_data$end[ c( nrow(grid_data), 1:nrow(grid_data)-1)] + 1
-grid_data$start = grid_data$start - 1
-grid_data=grid_data[-1,]
-
-# Make the plot
-p = ggplot(data.two, aes(x=as.factor(id), y=Value, fill=Pos)) +       # Note that id is a factor. If x is numeric, there is some space between the first bar
-  
-  geom_bar(aes(x=as.factor(id), y=Value, fill=Pos), stat="identity", alpha=0.5) +
-  
-  # Add a val=100/75/50/25 lines. I do it at the beginning to make sur barplots are OVER it.
-  geom_segment(data=grid_data, aes(x = end, y = 80, xend = start, yend = 80), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
-  geom_segment(data=grid_data, aes(x = end, y = 60, xend = start, yend = 60), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
-  geom_segment(data=grid_data, aes(x = end, y = 40, xend = start, yend = 40), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
-  geom_segment(data=grid_data, aes(x = end, y = 20, xend = start, yend = 20), colour = "grey", alpha=1, size=0.3 , inherit.aes = FALSE ) +
-  
-  # Add text showing the value of each 100/75/50/25 lines
-  annotate("text", x = rep(max(data.two$id),4), y = c(20, 40, 60, 80), label = c("20", "40", "60", "80") , color="grey", size=3 , angle=0, fontface="bold", hjust=1) +
-  
-  geom_bar(aes(x=as.factor(id), y=Value, fill=Pos), stat="identity", alpha=0.5) +
-  ylim(-100,120) +
-  theme_minimal() +
-  theme(
-    legend.position = "none",
-    axis.text = element_blank(),
-    axis.title = element_blank(),
-    panel.grid = element_blank(),
-    plot.margin = unit(rep(-1,4), "cm") 
-  ) +
-  coord_polar() + 
-  geom_text(data=label_data, aes(x=id, y=Value+10, label=Dpzv, hjust=hjust), color="black", fontface="bold",alpha=0.6, size=2.5, angle= label_data$angle, inherit.aes = FALSE ) +
-  
-  # Add base line information
-  geom_segment(data=base_data, aes(x = start, y = -5, xend = end, yend = -5), colour = "black", alpha=0.8, size=0.6 , inherit.aes = FALSE )  +
-  geom_text(data=base_data, aes(x = title, y = -18, label=c('A', 'B', 'C', 'D')), hjust=c(1,1,0,0), colour = "black", alpha=0.8, size=4, fontface="bold", inherit.aes = FALSE)
-
+# WORK IN PROGRESS
+p <- plot_ly(playerDataList, y = ~TotalNorm, color = ~Pos, type = "box")
 p
 
-# CLEANUP
-dat <- c('infos', 
-         'playerDataList',
-         'postDataExtended',
-         'postData')
-rm(list=setdiff(ls(), dat))
-
-# TODO
-p <- plot_ly(data = postData[-nrow(postData),], labels = ~Pos, values = ~TotalDistance.Mean) %>%
-     add_pie(hole = 0.6) %>%
-     layout(title = "Total distance per post",  showlegend = F,
-           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-p
-
-p <- plot_ly(data = postData[-nrow(postData),], labels = ~Pos, values = ~TotalDistance.Mean, type = 'pie',
-             textposition = 'inside',
-             textinfo = 'label+percent',
-             insidetextfont = list(color = '#FFFFFF'),
-             hoverinfo = 'text',
-             text = ~paste('$', TotalDistance.Mean, ' billions'),
-             marker = list(colors = colors,
-                           line = list(color = '#FFFFFF', width = 1)),
-             #The 'pull' attribute can also be used to create space between the sectors
-             showlegend = FALSE) %>%
-  layout(title = 'United States Personal Expenditures by Categories in 1960',
-         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
-         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
-p
-
-p <- plot_ly(playerDataList, y = ~Total, color = ~Pos, type = "box")
-p
+ddf2 = melt(postDataExtended[,c(1,3,15)])
+ggplot(ddf2, aes(x=Pos, y=value, fill=Team))+
+  geom_bar(stat='identity', position='dodge')
