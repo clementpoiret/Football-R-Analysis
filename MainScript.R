@@ -150,9 +150,24 @@ while (i <= 8) {
   i = i + 1
 }
 
-# SUMMARISE W/ DPLYR
+# SUMMARISE W/ DPLYR (GLOBAL STATS AND STATS PER MATCH)
 postData <- playerDataList %>%
   group_by(Pos) %>%
+  summarise(Dpzv1.Mean = mean(Dpzv1),
+            Dpzv2.Mean = mean(Dpzv2),
+            Dpzv3.Mean = mean(Dpzv3),
+            Dpzv4.Mean = mean(Dpzv4),
+            Dpzv5.Mean = mean(Dpzv5),
+            Dpzv1Norm.Mean = mean(Dpzv1Norm),
+            Dpzv2Norm.Mean = mean(Dpzv2Norm),
+            Dpzv3Norm.Mean = mean(Dpzv3Norm),
+            Dpzv4Norm.Mean = mean(Dpzv4Norm),
+            Dpzv5Norm.Mean = mean(Dpzv5Norm),
+            TimePlayed.Mean = mean(TimePlayed),
+            TotalDistance.Mean = mean(Total))
+
+postDataPerMatch <- playerDataList %>%
+  group_by(.dots=c('Pos','MatchPlayed')) %>%
   summarise(Dpzv1.Mean = mean(Dpzv1),
             Dpzv2.Mean = mean(Dpzv2),
             Dpzv3.Mean = mean(Dpzv3),
@@ -175,6 +190,7 @@ rm(list=setdiff(ls(), dat))
 # SAVE DATA TO CSV ----
 write.csv(playerDataList, file = "fiche_par_joueur.csv")
 write.csv(postData, file = "fiche_par_poste.csv")
+write.csv(postDataPerMatch, file = "fiche_par_poste_match.csv")
 
 # CHARTING ----
 
