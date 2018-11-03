@@ -20,8 +20,7 @@ rm(list=ls())
 library(tidyverse)
 library(fmsb)
 library(matrixStats)
-#devtools::install_github("FCrSTATS/SBpitch")
-library(SBpitch)
+library(plotly)
 
 setwd("~/Documents/Data/Université/Football-R-Analysis")
 
@@ -39,7 +38,7 @@ convertToKmh <- function(speedInMs){
   return(speedInMs*3.6)
 }
 
-loadData <- function(mList, mMatch) {
+loadData <- function(mList, mMatch, wrong_names) {
   
   playerDataList = NULL
   for (i in 1:length(mList)) {
@@ -92,8 +91,18 @@ loadData <- function(mList, mMatch) {
       if (i == 2) {
         # END OF LOOP, MERGING MATCH POSITION AND PLAYER DATA
         mDpzv <- as.data.frame(mDpzv)
-        Pos <- infos[grepl(gsub('.*\\ ', '', df$Player1Name[1]), toupper(infos$Player)) & 
+        
+        nameToSearch <- ''
+        
+        if (gsub('.*\\ ', '', df$Player1Name[1]) %in% names(wrong_names)) {
+          nameToSearch <- wrong_names[[gsub('.*\\ ', '', df$Player1Name[1])]]
+        } else {
+          nameToSearch <- gsub('.*\\ ', '', df$Player1Name[1])
+        }
+        
+        Pos <- infos[grepl(nameToSearch, toupper(infos$Player)) & 
                        grepl(MatchPlayed, infos$Match),]$Position[1]
+        
         if (is.null(Pos)) {
           # SETTING NA IF POS==NULL
           Pos <- 'NA'
@@ -111,6 +120,12 @@ loadData <- function(mList, mMatch) {
 }
 
 # MAIN SCRIPT ----
+wrong_names <- vector(mode='list', length=3)
+names(wrong_names) <- c('SANCHEZ', 'OEZIL', 'AGUERO')
+wrong_names[[1]] <- 'ALEXIS'
+wrong_names[[2]] <- 'ÖZIL'
+wrong_names[[3]] <- toupper('Agüero')
+
 for (i in 1:length(dirList)) {
   # GETTING ALL CSVs, ENDING BY '*Trajectory.csv'
   tmpLength <- length(csvList)
@@ -122,7 +137,7 @@ for (i in 1:length(dirList)) {
   
   if (i == length(dirList)) {
     # LOADING DATA
-    playerDataList <- loadData(csvList, i) 
+    playerDataList <- loadData(csvList, i, wrong_names) 
   }
 }
 
@@ -311,7 +326,28 @@ dat <- c("infos",
          "postData")
 rm(list=setdiff(ls(), dat))
 
-# FOOTBALL PLOTS
-## Todo
-create_Pitch(goaltype = "barcanumbers")
+# TODO
+p <- plot_ly(data = postData[-nrow(postData),], labels = ~Pos, values = ~TotalDistance.Mean) %>%
+     add_pie(hole = 0.6) %>%
+     layout(title = "Total distance per post",  showlegend = F,
+           xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+           yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p
 
+p <- plot_ly(data = postData[-nrow(postData),], labels = ~Pos, values = ~TotalDistance.Mean, type = 'pie',
+             textposition = 'inside',
+             textinfo = 'label+percent',
+             insidetextfont = list(color = '#FFFFFF'),
+             hoverinfo = 'text',
+             text = ~paste('$', TotalDistance.Mean, ' billions'),
+             marker = list(colors = colors,
+                           line = list(color = '#FFFFFF', width = 1)),
+             #The 'pull' attribute can also be used to create space between the sectors
+             showlegend = FALSE) %>%
+  layout(title = 'United States Personal Expenditures by Categories in 1960',
+         xaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE),
+         yaxis = list(showgrid = FALSE, zeroline = FALSE, showticklabels = FALSE))
+p
+
+p <- plot_ly(playerDataList, y = ~Total, color = ~Pos, type = "box")
+p
