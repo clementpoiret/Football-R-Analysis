@@ -327,7 +327,7 @@ colors = c(rgb(0.2,0.5,0.5,0.4), rgb(0.8,0.2,0.5,0.4), rgb(0.7,0.5,0.1,0.4))
 radarchart(data, axistype=1, 
            pcol=colors, pfcol=colors, plwd=0.5, plty=1,
            cglcol="grey", cglty=1, axislabcol="grey", cglwd=0.4,
-           title = "Goals"
+           title = "Gardiens"
 )
 
 ## Cleanup after charting
@@ -344,4 +344,16 @@ p
 
 ddf2 = melt(postDataExtended[,c(1,3,15)])
 ggplot(ddf2, aes(x=Pos, y=value, fill=Team))+
+  geom_bar(stat='identity', position='dodge') +
+  coord_cartesian(ylim = c(4000, 12500))
+
+ddf3 = melt(postData[,c(1,7,8,9,10,11)])
+ggplot(ddf3, aes(x=Pos, y=value, fill=variable))+
   geom_bar(stat='identity', position='dodge')
+
+dat <- c('infos', 
+         'playerDataList',
+         'postDataExtended',
+         'postData',
+         'postDataTeam')
+rm(list=setdiff(ls(), dat))
