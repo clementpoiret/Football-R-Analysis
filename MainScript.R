@@ -345,11 +345,15 @@ p
 ddf2 = melt(postDataExtended[,c(1,3,15)])
 ggplot(ddf2, aes(x=Pos, y=value, fill=Team))+
   geom_bar(stat='identity', position='dodge') +
-  coord_cartesian(ylim = c(4000, 12500))
+  coord_cartesian(ylim = c(4000, 12500)) + 
+  theme(axis.text.x = element_text(angle=45)) +
+  scale_x_discrete(labels=c(1:11))
 
 ddf3 = melt(postData[,c(1,7,8,9,10,11)])
 ggplot(ddf3, aes(x=Pos, y=value, fill=variable))+
-  geom_bar(stat='identity', position='dodge')
+  geom_bar(stat='identity', position='dodge') + 
+  theme(axis.text.x = element_text(angle=45)) +
+  scale_x_discrete(labels=c(1:11))
 
 dat <- c('infos', 
          'playerDataList',
